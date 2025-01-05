@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'ec2-slave' }
+    agent { label 'DevOps-slave1' }
 
     environment {
         ECR_REPO = 'your-ecr-repo-url'
@@ -26,16 +26,24 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'aws-ecr', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${env.ECR_REPO}"
-                    sh "docker push ${env.ECR_REPO}:${env.TAG}"
+                    sh """
+                        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${env.ECR_REPO}
+                        docker push ${env.ECR_REPO}:${env.TAG}
+                    """
                 }
             }
             post {
                 success {
-                    // Send email notification after successful image push to ECR
                     emailext(
                         subject: "Jenkins Job - Docker Image Pushed to ECR Successfully",
-                        body: "Hello,\n\nThe Docker image '${env.IMAGE_NAME}:${env.TAG}' has been successfully pushed to ECR.\n\nBest regards,\nJenkins",
+                        body: """
+                            Hello,
+
+                            The Docker image '${env.IMAGE_NAME}:${env.TAG}' has been successfully pushed to ECR.
+
+                            Best regards,
+                            Jenkins
+                        """,
                         recipientProviders: [[$class: 'DevelopersRecipientProvider']],
                         to: "m.ehtasham.azhar@gmail.com"
                     )
@@ -56,7 +64,7 @@ pipeline {
         stage('Container Security Scan - Trivy') {
             steps {
                 script {
-                    sh "trivy image ${ECR_REPO}:${TAG}"
+                    sh "trivy image ${env.ECR_REPO}:${env.TAG}"
                 }
             }
         }
@@ -75,10 +83,10 @@ pipeline {
 
                     sh """
                     ssh -i ${SSH_KEY} ec2-user@${targetHost} << EOF
-                    docker pull ${ECR_REPO}:${TAG}
-                    docker stop ${IMAGE_NAME} || true
-                    docker rm ${IMAGE_NAME} || true
-                    docker run -d --name ${IMAGE_NAME} -p 80:80 ${ECR_REPO}:${TAG}
+                    docker pull ${env.ECR_REPO}:${env.TAG}
+                    docker stop ${env.IMAGE_NAME} || true
+                    docker rm ${env.IMAGE_NAME} || true
+                    docker run -d --name ${env.IMAGE_NAME} -p 80:80 ${env.ECR_REPO}:${env.TAG}
                     EOF
                     """
                 }
@@ -88,14 +96,8 @@ pipeline {
 
     post {
         always {
-            cleanWs()  // Clean up workspace after the build
+            cleanWs() // Clean up workspace after the build
         }
     }
 }
-
-
-
-
-
-
 
