@@ -11,17 +11,13 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    // Checkout step needs workspace context
-                    git branch: "${env.BRANCH_NAME}", url: 'https://github.com/your-org/your-repo.git'
-                }
+                git branch: "${env.BRANCH_NAME}", url: 'https://github.com/your-org/your-repo.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build docker image in workspace
                     docker.build("${env.ECR_REPO}:${env.TAG}")
                 }
             }
@@ -30,13 +26,10 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'aws-ecr', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    script {
-                        // Push docker image to ECR
-                        sh """
-                            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${env.ECR_REPO}
-                            docker push ${env.ECR_REPO}:${env.TAG}
-                        """
-                    }
+                    sh """
+                        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${env.ECR_REPO}
+                        docker push ${env.ECR_REPO}:${env.TAG}
+                    """
                 }
             }
             post {
@@ -61,7 +54,6 @@ pipeline {
         stage('Static Code Analysis - SonarQube') {
             steps {
                 script {
-                    // Perform static code analysis with SonarQube
                     withSonarQubeEnv('SonarQubeServer') {
                         sh 'mvn sonar:sonar'
                     }
@@ -72,7 +64,6 @@ pipeline {
         stage('Container Security Scan - Trivy') {
             steps {
                 script {
-                    // Perform container security scan with Trivy
                     sh "trivy image ${env.ECR_REPO}:${env.TAG}"
                 }
             }
@@ -90,7 +81,6 @@ pipeline {
                         targetHost = '<PROD-EC2-IP>'
                     }
 
-                    // Deploy to EC2 instance based on branch
                     sh """
                     ssh -i ${SSH_KEY} ec2-user@${targetHost} << EOF
                     docker pull ${env.ECR_REPO}:${env.TAG}
@@ -106,8 +96,9 @@ pipeline {
 
     post {
         always {
-            // Clean up workspace after the build, ensure it's within a node block
-            cleanWs()
+            node { // Ensure that cleanWs is inside the node block
+                cleanWs() // Clean up workspace after the build
+            }
         }
     }
 }
