@@ -1,4 +1,4 @@
-pipeline { 
+pipeline {  
     agent { label 'DevOps-slave1' }
 
     environment {
@@ -96,8 +96,8 @@ pipeline {
 
     post {
         always {
-            node {
-                cleanWs() // Clean up workspace inside a node block
+            node('DevOps-slave1') { // Specify the label for the node
+                cleanWs() // Clean up workspace
             }
         }
     }
