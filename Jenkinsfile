@@ -96,8 +96,8 @@ pipeline {
 
     post {
         always {
-            node {
-                cleanWs() // Ensure cleanWs() runs inside a node block
+            node('DevOps-slave1') { // Specify the label for the node
+                cleanWs() // Clean up workspace
             }
         }
     }
