@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent { label 'DevOps-slave1' }
 
     environment {
@@ -96,9 +96,7 @@ pipeline {
 
     post {
         always {
-            node { // Ensure that cleanWs is inside the node block
-                cleanWs() // Clean up workspace after the build
-            }
+            cleanWs() // Clean up workspace after the build
         }
     }
 }
