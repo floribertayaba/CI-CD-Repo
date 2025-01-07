@@ -1,5 +1,5 @@
 pipeline {  
-    agent { label 'DevOps-slave1' }
+    agent any 
 
     environment {
         ECR_REPO = 'your-ecr-repo-url'
