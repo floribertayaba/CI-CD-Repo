@@ -1,5 +1,5 @@
 pipeline {  
-    agent any
+    agent any 
 
     environment {
         ECR_REPO = 'your-ecr-repo-url'
